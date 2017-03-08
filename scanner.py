@@ -24,6 +24,16 @@ class TokenType(Enum):
   N_EQ = 'N_EQ'
   WHILE = 'WHILE'
   EQ = 'EQ'
+  OP_MUL = 'OP_MUL'
+  OP_ADD = 'OP_ADD'
+  OP_DIV = 'OP_DIV'
+  OP_SUB = 'OP_SUB'
+  COMMENT_START = 'COMMENT_START'
+  COMMENT_END = 'COMMENT_END'
+  PARENTHESES_RIGHT = 'PARENTHESES_RIGHT'
+  PARENTHESES_LEFT = 'PARENTHESES_LEFT'
+  COMMA = "COMMA"
+
 
 token_types = {
   ';':    TokenType.SEMI_COLON,
@@ -35,7 +45,24 @@ token_types = {
   '[':    TokenType.BRACKET_RIGHT,
   'if':   TokenType.IF,
   'else': TokenType.ELSE,
-  '=':    TokenType.EQ
+  'return': TokenType.RETURN,
+  '<=':   TokenType.LT_EQ,
+  '<':    TokenType.LT,
+  '>':    TokenType.GT,
+  '>=':   TokenType.GT_EQ,
+  '==':   TokenType.EQ_EQ,
+  '!=':   TokenType.N_EQ,
+  '=':    TokenType.EQ,
+  'while':TokenType.WHILE,
+  '*':    TokenType.OP_MUL,
+  '+':    TokenType.OP_ADD,
+  '-':    TokenType.OP_SUB,
+  '/':    TokenType.OP_DIV,
+  ')':    TokenType.PARENTHESES_LEFT,
+  '(':    TokenType.PARENTHESES_RIGHT,
+  '/*':   TokenType.COMMENT_START,
+  '*/':   TokenType.COMMENT_END,
+  ',':    TokenType.COMMA
 }
 
 class Token(object):
@@ -49,157 +76,108 @@ def is_letter(string):
 def is_numeric(string):
   return re.match('[0-9]+', string)
 
-def is_alpha_numeric(string):
+def is_valid_id(string):
   return re.match('[a-zA-Z][a-zA-Z0-9_]*', string)
 
 class Tokenizer(object):
   def __init__(self):
     self.token_str = ''
-    self.state = "NOT_READING" #READING_ID | READING_INT | READING_KEYWORD | NOT_READING
+    self.state = "NOT_READING" #READING_ID | READING_INT | READING_KEYWORD | NOT_READING | COMMENT
     self.result_tokens = []
+    self.prevChar = ''
 
-  def consume_character(self, char):
-    if char == ' ' or char == '\n' or char == '\t':
-      if self.state == 'READING_ID':
-        if is_alpha_numeric(self.token_str):
-          self.result_tokens.append(Token(TokenType.ID, self.token_str))
-          self.state = 'NOT_READING'
-          self.token_str = ''
-        else:
-          raise Exception('invalid token ' + token_str)
-      elif self.state == 'READING_INT':
-        if is_numeric(token_str):
-          self.result_tokens.append(Token(TokenType.INT, self.token_str))
-          self.state = 'NOT_READING'
-          self.token_str = ''
-        else:
-          raise Exception('invalid token ' + token_str)
-      elif self.state == 'READING_KEYWORD':
-        if self.token_str in token_types.keys():
-          self.result_tokens.append(Token(token_types[self.token_str], self.token_str))
-        else:
-          self.result_tokens.append(Token(TokenType.ID, self.token_str))
+  def consume_character(self, pos, src):
+    #check to see if a comment has been entered or exited
 
-        self.state = 'NOT_READING'
-        self.token_str = ''
-      elif self.state == 'NOT_READING':
-        pass
-    else:
-      if self.state == 'READING_ID':
-        if is_numeric(char) or is_letter(char):
-          self.token_str += char
-        else:
-          raise Exception('invalid token ' + self.token_str)
-      elif self.state == 'READING_INT':
-        if is_numeric(char):
-          self.token_str += char
-        elif is_letter(char):
-          raise Exception('invalid token ' + self.token_str)
-        elif Tokenizer.is_root(char): #non-alpha_numeric root
-          #append an INT token
-          self.result_tokens.append(Token(TokenType.INT, self.token_str))
-          self.token_str = ''
-          self.token_str += char
-          self.state = 'READING_KEYWORD'
-      elif self.state == 'READING_KEYWORD':
-        self.token_str += char
-        if Tokenizer.is_root(self.token_str):
-          if self.token_str in token_types.keys():
-            self.result_tokens.append(Token(token_types[self.token_str], self.token_str))
-            self.token_str = ''
-            self.state = 'NOT_READING'
-        else:
-          pdb.set_trace()
-          raise Exception('invalid token ' + self.token_str)
-
-      elif self.state == 'NOT_READING':
-        if Tokenizer.is_root(char):
-          self.state = 'READING_KEYWORD'
-          self.token_str += char
-        elif is_numeric(char):
-          self.state = 'READING_INT'
-          self.token_str += char
-        elif is_letter(char):
-          self.state = 'READING_ID'
-          self.token_str += char
-        else:
-          raise Exception('invalid token ' + self.token_str)
+    char = src[pos]
     
-  '''
-  def Tokenize(self, src):
-    reading_token = False
-    token_start = 0
-    resulting_tokens = []
-
-    for i in range(0, len(src)):
-      #if the symbol is space/tab/newline
-        #if token_string in keyword terminals:
-          #state = NOT_READING
-          #append the token
-        #elif token_string is a valid number or identifier:
-          #state = NOT_READING
-          #append the token
-      #else:
-        #if state == READING:
-          if not alpha_numeric(src[i]): # if character read is not alphanumeric == new token starting
-            token = match_token(token_string)
-            if not token:
-              #baddd
-              raise Exception("foobarbaz")
-
-            resulting_tokens.append(token)
-            token_string = src[i]
-          else:
-            token_string += src[i]
-            continue
-          #token_string += src[i]
-          #if token_string is a root:
-          # continue
-          #elif token_string is a terminal keyword:
-          #if the token string formed is a non-terminal
-        #elif state == NOT_READING:
-      
-
-    for i in range(0, len(src)):
-      if src[i] == ' ' or src[i] == '\t' or src[i] == '\n':
-        if reading_token:
-          token = Tokenizer.match_keyword_token(src[token_start:i])
-          if token:
-            resulting_tokens.append(token)
-            
-          token = Tokenizer.match_id_int_token(src[token_start:i])
-          if token:
-            resulting_tokens.append(token)
-          else:
-            raise Exception("invalid token: "+src[token_start:i])
-
-          reading_token = False
-
-          resulting_tokens.append(token)
-      elif not reading_token: #start reading a new token
-        reading_token = True
-        token_start = i
-
-        if not Tokenizer.token_is_root(src[i]) and not Tokenizer.token_is_alphanumeric(src[i]):
-          raise Exception("invalid token: "+src[token_start:i])
+    if pos+1 < len(src):
+      if self.state != 'COMMENT':
+        if char == '/' and src[pos+1] == '*':
+          #grab the token that was being formed (if valid)
+          self.state = 'COMMENT'
       else:
-        # see if the token matches a root exactly
-        if Tokenizer.token_is_root(src[token_start:i]):
-          token = Tokenizer.match_token(src[token_start:i])
-          if token:
-            resulting_tokens.append(token)
-          else:
-            print "invalid token: " + token
-        else:
-          print "invalid token" + token
-  
-    return resulting_tokens
+        if char == '*' and src[pos+1] == '/':
+          self.state = 'NOT_READING'
+          return
 
-  '''
-  
+    if self.state != 'COMMENT':
+      if char == ' ' or char == '\n' or char == '\t':
+        if self.state == 'READING_ID':
+
+        elif self.state == 'READING_INT':
+
+        elif self.state == 'READING_KEYWORD':
+
+        elif self.state == 'NOT_READING':
+          pass
+      else:
+        #self.token_str += char
+
+        if self.state == 'READING_ID':
+          #if token_str + char is valid id,
+            #State -> READING_ID
+            #token_str += char
+          #if token_str + char not valid id
+            #emit the ID token (token_str)
+            #if char is a root:
+              #State <- READING_KEYWORD
+              #token_str = char
+            #if char is a number:
+              #State <- READING_INT
+              #token_str = char
+            #else:
+              #error case
+
+        elif self.state == 'READING_INT':
+          #if char is an int:
+            #token_str += char
+            #State <- READING_INT
+          #else if char is a root:
+            #emit token_str as an INT token
+            #token_str = char
+            #State <- READING_KEYWORD
+          #else:
+            #error condition
+
+        elif self.state == 'READING_KEYWORD':
+          #if token_str + char is a root:
+            #token_str += char
+            #State <- READING_KEYWORD
+          #else if token_str + char is a valid id:
+            #token_str += char
+            #State <- READING_ID
+          #else:
+            #if token_str is a keyword:
+              #emit keyword token
+            #else:
+              #error condition (incomplete keyword)
+
+            #if char is a root:
+              #State <- READING_KEYWORD
+              #token_str = char
+            #else if char is a letter (start of an ID?)
+              #State <- READING_ID
+              #token_str = char
+            #else if char is a number (start of an INT?)
+              #State <- READING_INT
+              #token_str = char
+
+        elif self.state == 'NOT_READING':
+            #if char is a root:
+              #State <- READING_KEYWORD
+              #token_str = char
+            #else if char is a letter (start of an ID?)
+              #State <- READING_ID
+              #token_str = char
+            #else if char is a number (start of an INT?)
+              #State <- READING_INT
+              #token_str = char
+    self.prevChar = char
+    
   def Tokenize(self, src):
     for i in range(0, len(src)):
-      self.consume_character(src[i])
+      self.consume_character(i, src)
 
     return self.result_tokens
 
@@ -218,6 +196,14 @@ class Tokenizer(object):
     token_is_root = reduce(lambda x, y: x or y, result)
     
     return token_is_root
+
+  @staticmethod
+  def is_only_root(token_str):
+    result =  map(lambda x: x.startswith(token_str), token_types.keys())
+    result = map(lambda x: 1 if x else 0, result)
+    possible_roots = reduce(lambda x, y: x + y, result)
+    
+    return possible_roots == 1
 
   @staticmethod
   def match_keyword_token(token_str):
@@ -256,8 +242,8 @@ class Tokenizer(object):
       Tokenizer.token_pp(token)
   
 if __name__ == "__main__":
-  with open("input.c") as f:
+  with open("selection_sort.c") as f:
     src = f.read()
     tokenizer = Tokenizer()
     tokens = tokenizer.Tokenize(src) 
-    pdb.set_trace()
+    Tokenizer.print_tokens(tokens)
