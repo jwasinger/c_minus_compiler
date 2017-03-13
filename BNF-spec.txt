@@ -1,0 +1,51 @@
+PROGRAM, {VARIABLE | ARRAY | FUNCTION}, *
+FUNCTION:
+  C1: PARAMETER_LIST
+  C2: COMPOUND
+
+PARAMETER_LIST:
+  SIBLING: {VARIABLE | ARRAY}, *
+
+COMPOUND
+  C1: DECLARATION #Not used from my understanding
+  C2: STATEMENT_LIST
+
+STATEMENT_LIST:
+  Sibling: {EXPRESSION | COMPOUND | IF | WHILE | RETURN | READ | WRITE | CALL }, *
+
+EXPRESSION:
+  nodeType: "+" | "-" | "/" | "*" | "<" | "<=" | ">" | ">= " | ...
+  C1: VARIABLE | ARRAY
+  C2: VARIABLE | ARRAY | EXPRESSION 
+
+VARIABLE:
+  Date Type: "int" | "void"
+
+ARRAY:
+  Node Type:  Array
+  Name:       variable name
+  Value:      {length}
+  C1:         EXPRESSION | null
+
+IF:
+  C1:   EXPRESSION #test expression
+  C2:   COMPOUND # true statement
+  C3:   COMPOUND #false statement
+
+WHILE:
+  C1:   EXPRESSION # test expression
+  C2:   COMPOUND #says STATEMENT list
+
+RETURN:
+  C1:   EXPRESSION # expression to be returned
+
+#TODO: READ
+#TODO: WRITE
+
+CALL:
+  sValue: #name of function being called
+  typeSpecifier: "int" | "void"
+  C1:  ARGUMENTS
+
+ARGUMENTS:
+  SIBLING: {NUMBER | VARIABLE | ARRAY}, * 
