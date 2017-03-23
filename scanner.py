@@ -1,6 +1,6 @@
 #! env/bin/python
 
-import sys, re, pdb
+import sys, re, pdb, json
 
 class TokenType(object):
   TYPE_INT = 'TYPE_INT'
@@ -33,6 +33,37 @@ class TokenType(object):
   PARENTHESES_LEFT = 'PARENTHESES_LEFT'
   COMMA = "COMMA"
 
+token_type_num = {
+  'TYPE_INT' : 0,
+  'TYPE_VOID' : 1,
+  'INT' : 2,
+  'ID' : 3,
+  'BRACKET_LEFT' : 4,
+  'BRACKET_RIGHT' : 5,
+  'BRACE_LEFT' : 6,
+  'BRACE_RIGHT' : 7,
+  'SEMI_COLON' : 8,
+  'IF' : 9,
+  'ELSE' : 10,
+  'RETURN' : 11,
+  'LT_EQ' : 12,
+  'LT' : 13,
+  'GT' : 14,
+  'GT_EQ' : 15,
+  'EQ_EQ' : 16,
+  'N_EQ' : 17,
+  'WHILE' : 18,
+  'EQ' : 19,
+  'OP_MUL' : 20,
+  'OP_ADD' : 21,
+  'OP_DIV' : 22,
+  'OP_SUB' : 23,
+  'COMMENT_START' : 24,
+  'COMMENT_END' : 25,
+  'PARENTHESES_RIGHT' : 26,
+  'PARENTHESES_LEFT' : 27,
+  'COMMA' : 28
+}
 
 token_types = {
   ';':    TokenType.SEMI_COLON,
@@ -179,7 +210,6 @@ class Tokenizer(object):
                 raise Exception("invalid token: "+self.token_str)
 
             else:
-              pdb.set_trace()
               raise Exception("incomplete keyword: " + self.token_str)
               #error condition (incomplete keyword)
 
@@ -226,10 +256,9 @@ class Tokenizer(object):
     result =  map(lambda x: x.startswith(token_str), token_types.keys())
     for x in result:
       if x:
-        result = True
-        break
+        return True
     
-    return result
+    return False
 
   @staticmethod
   def is_only_root(token_str):
@@ -277,10 +306,20 @@ class Tokenizer(object):
   def print_tokens(tokens):
     for token in tokens:
       Tokenizer.token_pp(token)
+
+  @staticmethod
+  def store_tokens_json(output, tokens):
+    tokens_json = map(lambda x: {'Type': token_type_num[x.Type], 'Value': x.Value}, tokens)
+
+    with open(output, 'w') as f:
+      pdb.set_trace()
+      json.dump(tokens_json, f)
+
   
 if __name__ == "__main__":
-  with open("selection_sort.c") as f:
+  with open("example.c") as f:
     src = f.read()
     tokenizer = Tokenizer()
     tokens = tokenizer.Tokenize(src) 
     Tokenizer.print_tokens(tokens)
+    Tokenizer.store_tokens_json('output-tokens.json', tokens)

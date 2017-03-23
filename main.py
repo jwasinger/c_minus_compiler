@@ -8,8 +8,9 @@ from parser import *
 if __name__ == "__main__":
 
   f = None
+
   try:
-    f = open("selection_sort.c")
+    f = open("example.c")
   except IOError as e:
     print e
     sys.exit(-1)
@@ -17,5 +18,7 @@ if __name__ == "__main__":
   src = f.read()
   tokenizer = Tokenizer()
   tokens = tokenizer.Tokenize(src) 
+  tokenizer.store_tokens_json('output-tokens.json', tokens)
 
-  parser = Parser()
+  f.close()
+  ast = Parse(tokens)
